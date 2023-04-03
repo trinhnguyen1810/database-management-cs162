@@ -36,9 +36,6 @@ class House(Base):
     date_listed = Column(DateTime)
     office_id = Column(Integer, ForeignKey(Office.id))
     agent_id = Column(Integer, ForeignKey(EstateAgent.id))
-    __table_args__ = (
-     Index('idx_date_listed', date_listed),
-    )
 
 class Buyer(Base):
     __tablename__ = 'buyers'
@@ -72,3 +69,4 @@ class Commission(Base):
     )
 
 Base.metadata.create_all(engine)
+
