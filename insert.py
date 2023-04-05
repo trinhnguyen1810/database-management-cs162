@@ -5,6 +5,7 @@ import pandas as pd
 from sqlalchemy import case
 from datetime import datetime
 import random
+import tabulate
 #from IPython.display import display
 
 
@@ -17,13 +18,14 @@ session = Session()
 
 
 f = Faker(["en_US"])
+Faker.seed(0)
 #create date time that range 4 months that get sold
 date_time_sold =[]
-for i in range(30):
-    date_time_sold.append(f.date_time_between(start_date="-90d"))
+for i in range(20):
+    date_time_sold.append(f.date_time_between(start_date="-30d"))
 
 date_time_list =[]
-for i in range(30):
+for i in range(20):
     date_time_list.append(f.date_time_between(start_date="-180d",end_date="-91d"))
 
 #create fake emails base on the name
@@ -34,19 +36,19 @@ def create_email(name):
 
 
 #office
-for i in range(5):
+for i in range(6):
     office = Office(id=i,name=f"office{i}",address=f.address())
     session.add(office)
 
 session.commit()
 
 #agent
-for i in range(5):
+for i in range(6):
     f_name = f.name()
     f_email = create_email(f_name)
     #making sure phone number in consistent format
     f_phone = ""
-    while not f_phone.startswith("(") and "x" not in f_phone:
+    while not f_phone.startswith("("):
         f_phone = f.phone_number()
     f_officeid = random.randint(0,4)
     estate_agent = EstateAgent(id=i,name=f_name,email=f_email,phone=f_phone,office_id=f_officeid)
@@ -54,7 +56,7 @@ for i in range(5):
 session.commit()
 
 #house
-for i in range(30):
+for i in range(15):
     num_beds = random.randint(0,5)
     num_baths = random.randint(0,5)
     f_zipcode = f.zipcode()
@@ -72,12 +74,12 @@ for i in range(30):
 session.commit()
 
 #buyer
-for i in range(18):
+for i in range(15):
     f_name = f.name()
     f_email = create_email(f_name)
     #making sure phone number in consistent format
     f_phone = ""
-    while not f_phone.startswith("(") and "x" not in f_phone:
+    while not f_phone.startswith("("):
         f_phone = f.phone_number()
     buyer = Buyer(id=i,name=f_name,email=f_email,phone=f_phone)
     session.add(buyer)
@@ -124,8 +126,8 @@ def add_sale_commision(houseid,buyerid,saledate):
 
 #insert sale data
 random_house_id =[]
-for i in range(20):
-    house_id_insert = random.randint(0,29)
+for i in range(12):
+    house_id_insert = random.randint(0,12)
     if house_id_insert in random_house_id:
         pass
     else:
@@ -166,14 +168,14 @@ print("Agents Table\n")
 print(agents_table.to_markdown())
 print("\n" * 2 )
 print("Houses Table\n")
-print(houses_table.to_markdown())
+print(houses_table.to_markdown(floatfmt='.0f'))
 print("\n" * 2 )
 print("Buyers Table\n")
 print(buyers_table.to_markdown())
 print("\n" * 2 )
 print("Sales Table\n")
-print(sales_table.to_markdown())
+print(sales_table.to_markdown(floatfmt='.0f'))
 print("\n" * 2 )
 print("Commissions Table\n")
-print(commisions_table.to_markdown())
+print(commisions_table.to_markdown(floatfmt='.0f'))
 print("\n" * 2 )
