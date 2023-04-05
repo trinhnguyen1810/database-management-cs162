@@ -73,7 +73,7 @@ def query_top_agents_sales(month,year):
         print(row)
 query_top_agents_sales("03","2023")
 
-def store_total_commision():
+def find_total_commision():
     print("Marker")
     statement = text(f"""
         SELECT
@@ -91,7 +91,7 @@ def store_total_commision():
         results = conn.execute(statement)
     for row in results:
         print(row)
-store_total_commision()
+find_total_commision()
 
 #Question 3 (LOTS OF BUGS)
 def calculate_and_store_commissions():
