@@ -51,7 +51,7 @@ class Sale(Base):
     __tablename__ = 'sales'
     id = Column(Integer, primary_key=True)
     sale_price = Column(Float)
-    sale_date = Column(DateTime)
+    sale_date = Column(DateTime,index=True)
     buyer_id = Column(Integer, ForeignKey(Buyer.id))
     estate_agent_id = Column(Integer, ForeignKey(EstateAgent.id),index = True)
     house_id = Column(Integer, ForeignKey(House.id),index = True)
@@ -70,6 +70,12 @@ class Commission(Base):
     #__table_args__ = (
     #    Index('idx_agent',estate_agent_id),
     #)
+
+class EstateAgentCommissions(Base):
+    __tablename__ = 'estate_agent_total_commissions'
+    id = Column(Integer, primary_key=True)
+    estate_agent_id = Column(Integer, primary_key=True)
+    total_commission = Column(Float)
 
 Base.metadata.create_all(engine)
 

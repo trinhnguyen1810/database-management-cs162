@@ -59,11 +59,11 @@ session.commit()
 for i in range(15):
     num_beds = random.randint(0,5)
     num_baths = random.randint(0,5)
-    f_zipcode = f.zipcode()
     f_sold = False
     f_price = int(random.randrange(150000, 3000000))
     f_datelist = date_time_list[i]
     f_officeid = random.randint(0,4)
+    f_zipcode = f'{f_officeid+1}000'
     f_agentid = random.randint(0,7)
     house = House(id=i,num_bedrooms=num_beds,
                   num_bathrooms=num_baths,

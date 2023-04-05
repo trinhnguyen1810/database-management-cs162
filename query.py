@@ -73,51 +73,11 @@ def query_top_agents_sales(month,year):
         print(row)
 query_top_agents_sales("03","2023")
 
-#Question 3 (LOTS OF BUGS)
-def calculate_and_store_commissions():
-    # create estate_agent_commissions table
-    Base.metadata.create_all(engine)
-    conn = engine.connect()
-    conn.execute("""
-    CREATE TABLE estate_agent_commissions (
-        estate_agent_id INTEGER,
-        name TEXT,
-        commission FLOAT
-    );
-    """)
-    conn.close()
-
-    # execute query and insert results into estate_agent_commissions table
-    session = Session()
-    query = text("""
-        INSERT INTO estate_agent_commissions (estate_agent_id, name, commission)
-        SELECT
-            estate_agents.id,
-            estate_agents.name,
-            SUM(commissions.commission)
-        FROM
-            commissions
-            INNER JOIN estate_agents ON commissions.estate_agent_id = estate_agents.id
-        GROUP BY
-            commissions.estate_agent_id
-
-    """)
-    session.execute(query)
-    session.commit()
-    session.close()
-
-    # print out estate_agent_commissions table
-    conn = engine.connect()
-    results = conn.execute("SELECT * FROM estate_agent_commissions")
-    for row in results:
-        print(row)
-    conn.close()
-
 def store_total_commision():
+    print("Marker")
     statement = text(f"""
         SELECT
             estate_agents.id,
-            estate_agents.name,
             SUM(commissions.commission)
         FROM
             commissions
@@ -127,12 +87,53 @@ def store_total_commision():
         ORDER BY
             SUM(commissions.commission) DESC
     """)
-
     with engine.connect() as conn:
         results = conn.execute(statement)
     for row in results:
         print(row)
+store_total_commision()
 
+#Question 3 (LOTS OF BUGS)
+def calculate_and_store_commissions():
+    # create estate_agent_total_commissions table if not exists
+    print("starttt")
+    Base.metadata.create_all(engine)
+    with engine.connect() as conn:
+        # update commission values for existing estate agents
+        statement = text("""
+            UPDATE estate_agent_total_commissions
+            SET total_commission = (
+                SELECT SUM(commissions.commission)
+                FROM commissions
+                WHERE commissions.estate_agent_id = estate_agent_total_commissions.estate_agent_id
+                GROUP BY commissions.estate_agent_id
+            )
+        """)
+        conn.execute(statement)
+
+        # insert commission values for new estate agents
+        statement = text("""
+            INSERT INTO estate_agent_total_commissions(estate_agent_id, total_commission)
+            SELECT
+                estate_agents.id,
+                SUM(commissions.commission)
+            FROM
+                commissions
+                INNER JOIN estate_agents ON commissions.estate_agent_id = estate_agents.id
+            GROUP BY
+                commissions.estate_agent_id
+            ORDER BY
+                SUM(commissions.commission) DESC
+        """)
+           
+        conn.execute(statement)
+        # print out estate_agent_total_commissions table
+        results = conn.execute("SELECT * FROM estate_agent_total_commissions")
+        for row in results:
+            print(row)
+
+calculate_and_store_commissions()
+#store_total_commision()
 #Question 4
 def avg_house_days(month,year):
     statement = text(f"""
