@@ -39,8 +39,10 @@ def query_top_offices_sales(month,year):
     queries = []
     with engine.connect() as conn:
         results = conn.execute(statement, {"month": month, "year": year})
-    for row in results:
-        print(row)
+    for result in results:
+        print(result)
+        queries.append(result)
+    return queries
 query_top_offices_sales("03","2023")
 
 #Question 2
@@ -68,11 +70,13 @@ def query_top_agents_sales(month,year):
             SUM(sales.sale_price) DESC
         LIMIT 5
     """)
-
+    queries = []
     with engine.connect() as conn:
         results = conn.execute(statement, {"month": month, "year": year})
-    for row in results:
-        print(row)
+    for result in results:
+        print(result)
+        queries.append(result)
+    return queries
 query_top_agents_sales("03","2023")
 
 def find_total_commision():
@@ -122,8 +126,6 @@ def calculate_and_store_commissions():
         results = conn.execute(text("SELECT * FROM estate_agent_total_commissions"))
         for row in results:
             print(row)
-
-
 calculate_and_store_commissions()
 
 #Question 4
