@@ -106,6 +106,32 @@ def find_total_commision():
 find_total_commision()
 
 #Question 3 (LOTS OF BUGS)
+def calculate_and_store_commissions():
+    # create estate_agent_total_commissions table if not exists
+    Base.metadata.create_all(engine)
+    with engine.connect() as conn:
+        # insert or replace commission values for estate agents
+        statement = text("""
+            INSERT OR REPLACE INTO estate_agent_total_commissions(estate_agent_id, total_commission)
+            SELECT
+                commissions.estate_agent_id,
+                SUM(commissions.commission)
+            FROM
+                commissions
+                INNER JOIN estate_agents ON commissions.estate_agent_id = estate_agents.id
+            GROUP BY
+                commissions.estate_agent_id
+            ORDER BY
+                SUM(commissions.commission) DESC
+
+        """)
+        conn.execute(statement)
+
+        # print out estate_agent_total_commissions table
+        results = conn.execute(text("SELECT * FROM estate_agent_total_commissions"))
+        for row in results:
+            print(row)
+
 
 #Question 4
 def avg_house_days(month,year):
