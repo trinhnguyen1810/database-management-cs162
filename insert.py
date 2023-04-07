@@ -15,13 +15,9 @@ Base.metadata.create_all(bind=engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
-
-
 f = Faker(["en_US"])
 Faker.seed(0)
 random.seed(0)
-
-
 
 #create fake emails base on the name
 def create_email(name):
@@ -81,6 +77,7 @@ def insert_buyers(num_buyer=25):
         session.add(buyer)
     session.commit()
 
+
 def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
     try:
         #updating house status
@@ -95,7 +92,6 @@ def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
         )
         house_listing = session.query(House).get(houseid)
         house_listing.sold = True
-        session.commit()
 
         #add sales entry to table
         house = session.query(House).get(houseid)
@@ -104,15 +100,15 @@ def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
         session.add(transaction)
         session.commit()
 
-        #add commision entry to the table
-        sale = session.query(Sale).filter(Sale.house_id == houseid).first()
-        saleid = sale.id 
-        house = session.query(House).get(houseid)
-        agentid = house.agent_id 
-        commission= Commission(estate_agent_id = agentid, buyer_id = buyerid, sale_id = saleid, commission = list_price * commission_rate)
-        session.add(commission)
-        session.commit()
-        session.close()
+        #check if the sale entry has been added before adding the commission entry
+        if session.query(Sale).filter(Sale.house_id == houseid).first() is not None:
+            sale = session.query(Sale).filter(Sale.house_id == houseid).first()
+            saleid = sale.id 
+            house = session.query(House).get(houseid)
+            agentid = house.agent_id 
+            commission= Commission(estate_agent_id = agentid, buyer_id = buyerid, sale_id = saleid, commission = list_price * commission_rate)
+            session.add(commission)
+            session.commit()
 
     except:
         session.rollback()
@@ -121,20 +117,28 @@ def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
 
 #insert sale data
 def insert_sale(num_sale=25):
-    random_house_id =[]
-    date_time_sold =[]
-    for i in range(num_sale):
-        date_time_sold.append(f.date_time_between(start_date="-30d"))
+    try:
+        random_house_id = []
+        date_time_sold = []
+        
+        for i in range(num_sale):
+            date_time_sold.append(f.date_time_between(start_date="-30d"))
 
-    for i in range(num_sale):
-        house_id_insert = random.randint(1,num_sale)
-        if house_id_insert in random_house_id:
-            pass
-        else:
-            random_house_id.append(house_id_insert)
-            buyer_id_insert= random.randint(1,num_sale)
-            date_time_insert = random.choice(date_time_sold)
-            add_sale_commision(house_id_insert,buyer_id_insert,date_time_insert)
+        for i in range(num_sale):
+            house_id_insert = random.randint(1,num_sale)
+            if house_id_insert in random_house_id:
+                pass
+            else:
+                random_house_id.append(house_id_insert)
+                buyer_id_insert = random.randint(1,num_sale)
+                date_time_insert = random.choice(date_time_sold)
+                add_sale_commision(house_id_insert, buyer_id_insert, date_time_insert)
+
+        session.commit()
+
+    except:
+        session.rollback()
+        raise
 
 
 insert_office()
@@ -159,7 +163,7 @@ houses_table.set_index('id', inplace=True)
 
 commisions_table = pd.read_sql_table(table_name="commissions", con=engine)
 commisions_table.set_index('id', inplace=True)
-
+session.close()
 
 
 print("Offices Table\n")
