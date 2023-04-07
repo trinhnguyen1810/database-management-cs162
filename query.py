@@ -36,7 +36,7 @@ def query_top_offices_sales(month,year):
             SUM(sales.sale_price) DESC
         LIMIT 5
     """)
-
+    queries = []
     with engine.connect() as conn:
         results = conn.execute(statement, {"month": month, "year": year})
     for row in results:
@@ -60,8 +60,10 @@ def query_top_agents_sales(month,year):
             strftime('%m', sales.sale_date) = :month
             AND strftime('%Y', sales.sale_date) = :year
         GROUP BY
-            houses.agent_id,
-            estate_agents.name
+            estate_agents.id, 
+            estate_agents.name, 
+            estate_agents.phone, 
+            estate_agents.email
         ORDER BY
             SUM(sales.sale_price) DESC
         LIMIT 5
@@ -75,9 +77,9 @@ query_top_agents_sales("03","2023")
 
 def find_total_commision():
     print("Marker")
-    statement = text(f"""
+    statement = text("""
         SELECT
-            estate_agents.id,
+            commissions.estate_agent_id,
             SUM(commissions.commission)
         FROM
             commissions
@@ -86,6 +88,7 @@ def find_total_commision():
             commissions.estate_agent_id
         ORDER BY
             SUM(commissions.commission) DESC
+
     """)
     with engine.connect() as conn:
         results = conn.execute(statement)
@@ -96,26 +99,13 @@ find_total_commision()
 #Question 3 (LOTS OF BUGS)
 def calculate_and_store_commissions():
     # create estate_agent_total_commissions table if not exists
-    print("starttt")
     Base.metadata.create_all(engine)
     with engine.connect() as conn:
-        # update commission values for existing estate agents
+        # insert or replace commission values for estate agents
         statement = text("""
-            UPDATE estate_agent_total_commissions
-            SET total_commission = (
-                SELECT SUM(commissions.commission)
-                FROM commissions
-                WHERE commissions.estate_agent_id = estate_agent_total_commissions.estate_agent_id
-                GROUP BY commissions.estate_agent_id
-            )
-        """)
-        conn.execute(statement)
-
-        # insert commission values for new estate agents
-        statement = text("""
-            INSERT INTO estate_agent_total_commissions(estate_agent_id, total_commission)
+            INSERT OR REPLACE INTO estate_agent_total_commissions(estate_agent_id,total_commission)
             SELECT
-                estate_agents.id,
+                commissions.estate_agent_id,
                 SUM(commissions.commission)
             FROM
                 commissions
@@ -124,16 +114,18 @@ def calculate_and_store_commissions():
                 commissions.estate_agent_id
             ORDER BY
                 SUM(commissions.commission) DESC
+
         """)
-           
         conn.execute(statement)
+
         # print out estate_agent_total_commissions table
-        results = conn.execute("SELECT * FROM estate_agent_total_commissions")
+        results = conn.execute(text("SELECT * FROM estate_agent_total_commissions"))
         for row in results:
             print(row)
 
+
 calculate_and_store_commissions()
-#store_total_commision()
+
 #Question 4
 def avg_house_days(month,year):
     statement = text(f"""
@@ -184,3 +176,7 @@ avg_selling_price("03","2023")
 
 
 
+print("Total Agent - Commissions Table\n")
+agent_commision_table = pd.read_sql_table(table_name="estate_agent_total_commissions", con=engine)
+agent_commision_table.set_index('id', inplace=True)
+print(agent_commision_table.to_markdown(floatfmt='.0f'))

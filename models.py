@@ -20,7 +20,6 @@ class EstateAgent(Base):
     name = Column(String)
     email = Column(String)
     phone = Column(String)
-    office_id = Column(Integer, ForeignKey(Office.id))
     #__table_args__ = (
      #   Index('idx_name_agent',name),
     #)
@@ -74,7 +73,7 @@ class Commission(Base):
 class EstateAgentCommissions(Base):
     __tablename__ = 'estate_agent_total_commissions'
     id = Column(Integer, primary_key=True)
-    estate_agent_id = Column(Integer, primary_key=True)
+    estate_agent_id = Column(Integer)
     total_commission = Column(Float)
 
 Base.metadata.create_all(engine)

@@ -19,14 +19,9 @@ session = Session()
 
 f = Faker(["en_US"])
 Faker.seed(0)
-#create date time that range 4 months that get sold
-date_time_sold =[]
-for i in range(20):
-    date_time_sold.append(f.date_time_between(start_date="-30d"))
+random.seed(0)
 
-date_time_list =[]
-for i in range(20):
-    date_time_list.append(f.date_time_between(start_date="-180d",end_date="-91d"))
+
 
 #create fake emails base on the name
 def create_email(name):
@@ -34,63 +29,63 @@ def create_email(name):
     email = "".join(words) + "@gmail.com"
     return email
 
+def insert_office(num_office=6):
+    for i in range(num_office):
+        office = Office(id=i+1,name=f"office{i+1}",address=f.address())
+        session.add(office)
+    session.commit()
 
-#office
-for i in range(6):
-    office = Office(id=i,name=f"office{i}",address=f.address())
-    session.add(office)
+def insert_agents(num_agents=8):
+    for i in range(num_agents):
+        f_name = f.name()
+        f_email = create_email(f_name)
+        #making sure phone number in consistent format
+        f_phone = ""
+        while not f_phone.startswith("("):
+            f_phone = f.phone_number()
+        estate_agent = EstateAgent(id=i+1,name=f_name,email=f_email,phone=f_phone)
+        session.add(estate_agent)
+    session.commit()
 
-session.commit()
-
-#agent
-for i in range(6):
-    f_name = f.name()
-    f_email = create_email(f_name)
-    #making sure phone number in consistent format
-    f_phone = ""
-    while not f_phone.startswith("("):
-        f_phone = f.phone_number()
-    f_officeid = random.randint(0,4)
-    estate_agent = EstateAgent(id=i,name=f_name,email=f_email,phone=f_phone,office_id=f_officeid)
-    session.add(estate_agent)
-session.commit()
-
-#house
-for i in range(15):
-    num_beds = random.randint(0,5)
-    num_baths = random.randint(0,5)
-    f_sold = False
-    f_price = int(random.randrange(150000, 3000000))
-    f_datelist = date_time_list[i]
-    f_officeid = random.randint(0,4)
-    f_zipcode = f'{f_officeid+1}000'
-    f_agentid = random.randint(0,7)
-    house = House(id=i,num_bedrooms=num_beds,
-                  num_bathrooms=num_baths,
-                  zipcode=f_zipcode,sold=f_sold,
-                  list_price=f_price,date_listed =f_datelist,
-                  office_id=f_officeid,agent_id=f_agentid)
-    session.add(house)
-session.commit()
+def insert_house(num_house =30):
+    date_time_list =[]
+    for i in range(num_house):
+        date_time_list.append(f.date_time_between(start_date="-180d",end_date="-91d"))
+    for i in range(num_house):
+        num_beds = random.randint(1,5)
+        num_baths = random.randint(1,5)
+        f_sold = False
+        f_price = int(random.randrange(150000, 3000000))
+        f_datelist = date_time_list[i]
+        f_officeid = random.randint(1,5)
+        f_zipcode = f'{f_officeid}000'
+        f_agentid = random.randint(1,8)
+        house = House(id=i+1,num_bedrooms=num_beds,
+                    num_bathrooms=num_baths,
+                    zipcode=f_zipcode,sold=f_sold,
+                    list_price=f_price,date_listed =f_datelist,
+                    office_id=f_officeid,agent_id=f_agentid)
+        session.add(house)
+    session.commit()
 
 #buyer
-for i in range(15):
-    f_name = f.name()
-    f_email = create_email(f_name)
-    #making sure phone number in consistent format
-    f_phone = ""
-    while not f_phone.startswith("("):
-        f_phone = f.phone_number()
-    buyer = Buyer(id=i,name=f_name,email=f_email,phone=f_phone)
-    session.add(buyer)
-session.commit()
+def insert_buyers(num_buyer=25):
+    for i in range(num_buyer):
+        f_name = f.name()
+        f_email = create_email(f_name)
+        #making sure phone number in consistent format
+        f_phone = ""
+        while not f_phone.startswith("("):
+            f_phone = f.phone_number()
+        buyer = Buyer(id=i+1,name=f_name,email=f_email,phone=f_phone)
+        session.add(buyer)
+    session.commit()
 
-
-def add_sale_commision(houseid,buyerid,saledate):
+def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
     try:
         #updating house status
         house = session.query(House).get(houseid)
-        list_price = house.list_price
+        list_price = price_sold if price_sold is not None else house.list_price
         commission_rate = case(
         (list_price < 100000, 0.1), 
         (list_price < 200000, 0.075), 
@@ -125,41 +120,47 @@ def add_sale_commision(houseid,buyerid,saledate):
 
 
 #insert sale data
-random_house_id =[]
-for i in range(12):
-    house_id_insert = random.randint(0,12)
-    if house_id_insert in random_house_id:
-        pass
-    else:
-        random_house_id.append(house_id_insert)
-        buyer_id_insert= random.randint(0,17)
-        date_time_insert = random.choice(date_time_sold)
-        print(date_time_insert)
-        add_sale_commision(house_id_insert,buyer_id_insert,date_time_insert)
+def insert_sale(num_sale=25):
+    random_house_id =[]
+    date_time_sold =[]
+    for i in range(num_sale):
+        date_time_sold.append(f.date_time_between(start_date="-30d"))
+
+    for i in range(num_sale):
+        house_id_insert = random.randint(1,num_sale)
+        if house_id_insert in random_house_id:
+            pass
+        else:
+            random_house_id.append(house_id_insert)
+            buyer_id_insert= random.randint(1,num_sale)
+            date_time_insert = random.choice(date_time_sold)
+            add_sale_commision(house_id_insert,buyer_id_insert,date_time_insert)
 
 
-Session = sessionmaker(bind=engine)
-session = Session()
-
+insert_office()
 office_table = pd.read_sql_table(table_name="offices", con=engine)
 office_table.set_index('id', inplace=True)
 
+insert_agents()
 agents_table = pd.read_sql_table(table_name="estate_agents", con=engine)
 agents_table.set_index('id', inplace=True)
+
+insert_buyers()
+buyers_table = pd.read_sql_table(table_name="buyers", con=engine)
+buyers_table.set_index('id', inplace=True)
+
+insert_house()
+insert_sale()
+sales_table = pd.read_sql_table(table_name="sales", con=engine)
+sales_table.set_index('id', inplace=True)
 
 houses_table = pd.read_sql_table(table_name="houses", con=engine)
 houses_table.set_index('id', inplace=True)
 
-
-
-buyers_table = pd.read_sql_table(table_name="buyers", con=engine)
-buyers_table.set_index('id', inplace=True)
-
-sales_table = pd.read_sql_table(table_name="sales", con=engine)
-sales_table.set_index('id', inplace=True)
-
 commisions_table = pd.read_sql_table(table_name="commissions", con=engine)
 commisions_table.set_index('id', inplace=True)
+
+
 
 print("Offices Table\n")
 print(office_table.to_markdown())
