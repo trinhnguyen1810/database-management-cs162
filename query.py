@@ -12,6 +12,7 @@ import numpy as np
 
 # Create engine and session
 engine = create_engine('sqlite:///real_estate.db')
+Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -193,6 +194,7 @@ print("\n")
 
 print("Question 3: \n")
 print("Total Agent - Commissions Table\n")
+calculate_and_store_commissions()
 agent_commision_table = pd.read_sql_table(table_name="estate_agent_total_commissions", con=engine)
 agent_commision_table.set_index('id', inplace=True)
 print(agent_commision_table.to_markdown(floatfmt='.0f'))
@@ -208,4 +210,4 @@ print("Question 5: \n")
 avg_selling_price("03","2023")
 print("_____________________________________________________________________________")
 print("\n")
-
+session.close()
