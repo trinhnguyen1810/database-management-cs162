@@ -6,13 +6,10 @@ from sqlalchemy import case
 from datetime import datetime
 import random
 import tabulate
-#from IPython.display import display
 
-
-
+#creating engine and sessions
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine) 
-
 Session = sessionmaker(bind=engine)
 session = Session()
 f = Faker(["en_US"])
@@ -25,12 +22,14 @@ def create_email(name):
     email = "".join(words) + "@gmail.com"
     return email
 
+# function to inserting fake office data
 def insert_office(num_office=6):
     for i in range(num_office):
         office = Office(id=i+1,name=f"office{i+1}",address=f.address())
         session.add(office)
     session.commit()
 
+#function to inserting fake agents data
 def insert_agents(num_agents=8):
     for i in range(num_agents):
         f_name = f.name()
@@ -43,10 +42,12 @@ def insert_agents(num_agents=8):
         session.add(estate_agent)
     session.commit()
 
-def insert_house(num_house =30):
+#function to inserting fake house data
+def insert_house(num_house =30,datetime_start=datetime(2023, 1, 1),datetime_end=datetime(2023,3,1)):
     date_time_list =[]
     for i in range(num_house):
-        date_time_list.append(f.date_time_between(start_date="-180d",end_date="-91d"))
+        #get random dates: defaults between 1/1/2023 and 1/3/2023
+        date_time_list.append(f.date_time_between_dates(datetime_start=datetime_start,datetime_end=datetime_end))
     for i in range(num_house):
         num_beds = random.randint(1,5)
         num_baths = random.randint(1,5)
@@ -63,8 +64,9 @@ def insert_house(num_house =30):
                     office_id=f_officeid,agent_id=f_agentid)
         session.add(house)
     session.commit()
+    print(f.date)
 
-#buyer
+#function to inserting fake buyers data
 def insert_buyers(num_buyer=25):
     for i in range(num_buyer):
         f_name = f.name()
@@ -78,68 +80,81 @@ def insert_buyers(num_buyer=25):
     session.commit()
 
 
-def add_sale_commision(houseid,buyerid,saledate,price_sold=None):
+def add_sale_commision(houseid, buyerid, saledate, price_sold=None, session=None):
     try:
-        #updating house status
+        # update house status to sold and get list price
         house = session.query(House).get(houseid)
         list_price = price_sold if price_sold is not None else house.list_price
         commission_rate = case(
-        (list_price < 100000, 0.1), 
-        (list_price < 200000, 0.075), 
-        (list_price < 500000, 0.06), 
-        (list_price < 1000000, 0.05),
-        (list_price > 1000000, 0.04),
+            (list_price < 100000, 0.1), 
+            (list_price < 200000, 0.075), 
+            (list_price < 500000, 0.06), 
+            (list_price < 1000000, 0.05),
+            (list_price > 1000000, 0.04),
         )
-        house_listing = session.query(House).get(houseid)
-        house_listing.sold = True
+        house.sold = True
 
-        #add sales entry to table
-        house = session.query(House).get(houseid)
+        # add sale entry to the table
         agentid = house.agent_id 
-        transaction = Sale(house_id = houseid, buyer_id = buyerid, estate_agent_id =agentid,sale_price=list_price, sale_date =saledate)
+        transaction = Sale(house_id=houseid, estate_agent_id=agentid, buyer_id=buyerid, sale_price=list_price, sale_date=saledate)
         session.add(transaction)
-        session.commit()
+        session.flush()  # flush the transaction to generate a sale ID
 
-        #check if the sale entry has been added before adding the commission entry
-        if session.query(Sale).filter(Sale.house_id == houseid).first() is not None:
-            sale = session.query(Sale).filter(Sale.house_id == houseid).first()
-            saleid = sale.id 
-            house = session.query(House).get(houseid)
-            agentid = house.agent_id 
-            commission= Commission(estate_agent_id = agentid, buyer_id = buyerid, sale_id = saleid, commission = list_price * commission_rate)
-            session.add(commission)
-            session.commit()
+        # add commission entry to table
+        saleid = transaction.id 
+        commission = Commission(sale_id=saleid, estate_agent_id=agentid, buyer_id=buyerid, commission=list_price * commission_rate)
+        session.add(commission)
 
     except:
+        # if an exception occurs,roll back the transaction to ensure data consistency
         session.rollback()
         raise
 
-
 #insert sale data
 def insert_sale(num_sale=25):
+    #try inserting sales
     try:
         random_house_id = []
-        date_time_sold = []
-        
+        date_time_sold = []   
         for i in range(num_sale):
-            date_time_sold.append(f.date_time_between(start_date="-30d"))
-
+            date_time_sold.append(f.date_time_between_dates(datetime_start=datetime(2023, 3, 2),datetime_end=datetime(2023,4,9)))
+            
+        # loop over all the sales
         for i in range(num_sale):
+            # create a new session for this transaction
+            session = Session()
+            
+            # start transaction to insert sales
+            session.begin()
+            
+            # generate random data for the sale
             house_id_insert = random.randint(1,num_sale)
+
+            # ensure that the same house is not sold twice in the same transaction
             if house_id_insert in random_house_id:
-                pass
+                session.rollback()
+                session.close()
+                continue
+            
             else:
                 random_house_id.append(house_id_insert)
                 buyer_id_insert = random.randint(1,num_sale)
                 date_time_insert = random.choice(date_time_sold)
-                add_sale_commision(house_id_insert, buyer_id_insert, date_time_insert)
 
-        session.commit()
+                # call function to add sale and commission entries for each sale
+                add_sale_commision(house_id_insert, buyer_id_insert, date_time_insert,session=session)
 
+                # commit transaction to insert sale and commission entries together
+                session.commit()
+
+                # close session
+                session.close()
+
+    # catch any exception and roll back the transaction to ensure data consistency
     except:
         session.rollback()
+        session.close()
         raise
-
 
 insert_office()
 office_table = pd.read_sql_table(table_name="offices", con=engine)
