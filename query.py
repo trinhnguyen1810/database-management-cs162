@@ -128,7 +128,10 @@ def calculate_and_store_commissions():
         """)
         conn.execute(statement)
 
-        # its printing our results but not print out table below?
+        # its printing out resulys but why the table cant be read??
+        agent_commision_table = pd.read_sql_table(table_name="estate_agent_total_commissions", con=engine, index_col='estate_agent_id')
+        agent_commision_table.set_index('id', inplace=True)
+        print(agent_commision_table.to_markdown(floatfmt='.0f'))
         results = conn.execute(text("SELECT * FROM estate_agent_total_commissions"))
         for row in results:
            print(row)
