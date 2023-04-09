@@ -111,6 +111,7 @@ def add_sale_commision(houseid, buyerid, saledate, price_sold=None, session=None
         raise
 
 #insert sale data
+#use transactions
 def insert_sale(num_sale=25):
     #try inserting sales
     try:
@@ -135,7 +136,7 @@ def insert_sale(num_sale=25):
                 session.rollback()
                 session.close()
                 continue
-            
+
             else:
                 random_house_id.append(house_id_insert)
                 buyer_id_insert = random.randint(1,num_sale)

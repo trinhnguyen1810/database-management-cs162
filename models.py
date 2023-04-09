@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 engine = create_engine('sqlite:///real_estate.db', echo=True)
 Base = declarative_base()
 
+#normalized tables to 3NF form
 #creating an office object to insert to the office table
 class Office(Base):
     __tablename__ = 'offices'
@@ -77,6 +78,7 @@ class Sale(Base):
 #creating a commission object to insert to the commission table
 #using foreign key to join tables and ensure consistency across data tables 
 #add index on relevant columns based on frequency we would query and uniqueness
+
 class Commission(Base):
     __tablename__ = 'commissions'
     id = Column(Integer, primary_key=True)
