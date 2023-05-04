@@ -33,8 +33,7 @@ def query_top_offices_sales(month,year):
             strftime('%m', sales.sale_date) = :month
             AND strftime('%Y', sales.sale_date) = :year
         GROUP BY
-            houses.office_id,
-            offices.name
+            houses.office_id
         ORDER BY
             SUM(sales.sale_price) DESC
         LIMIT 5
@@ -72,10 +71,7 @@ def query_top_agents_sales(month,year):
             strftime('%m', sales.sale_date) = :month
             AND strftime('%Y', sales.sale_date) = :year
         GROUP BY
-            estate_agents.id, 
-            estate_agents.name, 
-            estate_agents.phone, 
-            estate_agents.email
+            estate_agents.id
         ORDER BY
             SUM(sales.sale_price) DESC
         LIMIT 5
